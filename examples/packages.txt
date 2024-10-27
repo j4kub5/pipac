@@ -1,0 +1,11 @@
+# base system
+base
+linux
+linux-firmware
+base-devel
+btrfs-progs
+efibootmgr
+
+# GUI
+sway &swaybg # wayland compositor
+waybar

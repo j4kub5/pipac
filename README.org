@@ -1,0 +1,74 @@
+#+TITLE: pipac - Prune and Install PACkages
+
+* About
+=pipac= (Prune and Install PACkages) is a Python tool that helps maintain a clean system (Arch Linux or similar) by ensuring that explicitly installed packages match user-provided package lists (declarative package management).
+
+** Features
+- maintains system packages based on package lists
+- supports multiple package managers (yay, paru, pacman)
+- handles optional dependencies
+
+* Installation
+#+BEGIN_SRC bash
+git clone https://github.com/j4kub5/pipac
+cd pipac
+sudo install -Dm755 pipac.py /usr/bin/pipac
+#+END_SRC
+
+* Usage
+#+BEGIN_SRC
+pipac [COMMAND]... [PACKAGE_LIST]...
+#+END_SRC
+
+** Commands
+- =-i= :: Install packages from lists that are not currently installed
+- =-p= :: Prune packages not in lists (mark as dependencies)
+- =-h= :: Display help message
+
+** Package Lists
+Package lists are text files; packages are line or space separated. Optional dependencies should be prefixed with =&=. Everything in a line after =#= is a comment (ignored by the program). 
+
+Example package list:
+#+BEGIN_SRC
+package1
+package2 # comment
+&optional_dependency_for_package2
+
+# comment
+package3 package4
+package5 &optional_dependency_for_package5
+#+END_SRC
+
+** Examples
+#+BEGIN_SRC bash
+    # Install missing packages lists
+    pipac -i packages.txt $HOSTNAME.txt
+
+    # Prune packages not in lists
+    pipac -p packages.txt $HOSTNAME.txt
+    yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
+
+    # Combine prune and install
+    pipac -ip packages.txt $HOSTNAME.txt
+#+END_SRC
+
+** Example upgrade script
+#+begin_src bash
+  pipac -p packages.txt $HOSTNAME.txt
+  yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
+  yay -Suy
+  pipac -i packages.txt $HOSTNAME.txt
+#+end_src 
+
+** Create a package list for further editing
+#+begin_src bash
+  pacman -Qeq > packages.txt
+#+end_src
+
+* TO-DOs
+- [ ] more examples (use with scripts)
+- [ ] document alternative software
+- [ ] create an AUR package
+- [ ] feature: update system while installing
+- [ ] feature: read default package lists from user's config
+- [ ] feature: default behavior when no arguments are passed
