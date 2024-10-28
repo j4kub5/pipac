@@ -21,9 +21,9 @@ pipac [COMMAND]... [PACKAGE_LIST]...
 #+END_SRC
 
 ** Commands
-- =-i= :: Install packages from lists that are not currently installed
-- =-p= :: Prune packages not in lists (mark as dependencies)
-- =-h= :: Display help message
+- =-h=, =--help= :: display help message
+- =-i=, =--install= :: install packages from lists that are not currently installed
+- =-p=, =--prune= :: prune packages not in lists (mark as dependencies)
 
 ** Package Lists
 Package lists are text files; packages are line or space separated. Optional dependencies should be prefixed with =&=. Everything in a line after =#= is a comment (ignored by the program). 
@@ -39,10 +39,20 @@ package3 package4
 package5 &optional_dependency_for_package5
 #+END_SRC
 
+*** Default package lists
+I no package lists are specified as arguments =pipac= will use default package lists:
+- =~/.config/pipac/packages.txt=
+- =~/.config/pipac/$HOSTNAME.txt=
+
+
+
 ** Examples
 #+BEGIN_SRC bash
-    # Install missing packages lists
+    # Install missing packages in lists
     pipac -i packages.txt $HOSTNAME.txt
+
+    # Install missing packages in default lists
+    pipac -i
 
     # Prune packages not in lists
     pipac -p packages.txt $HOSTNAME.txt
@@ -56,7 +66,6 @@ package5 &optional_dependency_for_package5
 #+begin_src bash
   pipac -p packages.txt $HOSTNAME.txt
   yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
-  yay -Suy
   pipac -i packages.txt $HOSTNAME.txt
 #+end_src 
 
@@ -69,6 +78,6 @@ package5 &optional_dependency_for_package5
 - [ ] more examples (use with scripts)
 - [ ] document alternative software
 - [ ] create an AUR package
-- [ ] feature: update system while installing
-- [ ] feature: read default package lists from user's config
-- [ ] feature: default behavior when no arguments are passed
+- [X] feature: update system while installing
+- [X] feature: read default package lists
+- [X] feature: default behavior when no arguments are passed

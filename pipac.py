@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""
-pipac - Prune and Install PACkages
-A tool to maintain system packages based on package lists.
-"""
+"""pipac - Prune and Install PACkages
+
+Maintain Arch linux system packages based on package lists
+(declarative package management)."""
 
 import subprocess
 import sys
@@ -11,7 +11,13 @@ import argparse
 from typing import List, Set, Tuple
 
 def create_parser() -> argparse.ArgumentParser:
-    """Create and return the argument parser."""
+    """Create and return the argument parser with documentation.
+
+    This function sets up the command-line interface for managing
+    package lists. The parser includes options to install packages
+    that are not currently installed or prune packages that are not in
+    the list, and specify one or more package list files as arguments.
+    """
     parser = argparse.ArgumentParser(
         description='Maintain system with package lists.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -31,15 +37,20 @@ def create_parser() -> argparse.ArgumentParser:
     
     parser.add_argument(
         'package_lists',
-        nargs='+',
-        metavar='PACKAGE_LIST',
+        nargs='*',
+        metavar='package_list',
+        default=[
+            f"{os.path.expanduser("~/.config/pipac/packages.txt")}",
+            f"{os.path.expanduser(f"~/.config/pipac/{os.uname().nodename}.txt")}"],
         help='one or more package list files'
     )
     
     return parser
 
 def get_package_manager() -> str:
-    """Return the available package manager (yay, paru, or pacman)."""
+    """Return the available package manager.
+    The order of preference is: yay > paru > pacman.
+    If no supported package manager is found, raise a SystemError."""
     for pm in ['yay', 'paru', 'pacman']:
         try:
             subprocess.run(['which', pm], capture_output=True, check=False)
@@ -98,10 +109,13 @@ def install_packages(pm: str, packages: Set[str], as_deps: bool = False) -> None
         return
         
     cmd = pm.split()
-    cmd.extend(['-S', '--needed'])
+    cmd.extend(['-S', '--needed', '--sysupgrade', '--refresh'])
+
     if as_deps:
         cmd.extend(['--asdeps'])
+
     cmd.extend(packages)
+
     
     try:
         subprocess.run(cmd, check=True)
@@ -150,7 +164,7 @@ def main():
         parser.print_help()
         sys.exit(0)
     
-    # Get package manager once
+    # Get package manager
     try:
         pm = get_package_manager()
     except SystemError as e:
@@ -188,11 +202,7 @@ def main():
         if to_prune:
             print(f"Marking as dependencies: {', '.join(sorted(to_prune))}")
             mark_as_deps(pm, to_prune)
-            print("""
-You may now remove orphans manually with one of these:
-yay -Yc
-paru -c
-sudo pacman -Rns $(pacman -Qtdq)""")
+            print("You may now remove orphans manually.")
 
 if __name__ == '__main__':
     main()
