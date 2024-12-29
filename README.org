@@ -9,11 +9,17 @@
 - handles optional dependencies
 
 * Installation
+** Manual
 #+BEGIN_SRC bash
 git clone https://github.com/j4kub5/pipac
 cd pipac
 sudo install -Dm755 pipac.py /usr/bin/pipac
 #+END_SRC
+
+** AUR
+#+begin_src bash
+yay -S pipac
+#+end_src
 
 * Usage
 #+BEGIN_SRC
@@ -39,27 +45,41 @@ package3 package4
 package5 &optional_dependency_for_package5
 #+END_SRC
 
+*** Create a package list
+#+begin_src bash
+  pacman -Qeq > packages.txt
+#+end_src
+
 *** Default package lists
-I no package lists are specified as arguments =pipac= will use default package lists:
+If no package lists are specified as arguments =pipac= will use default package lists:
 - =~/.config/pipac/packages.txt=
 - =~/.config/pipac/$HOSTNAME.txt=
 
+Replace =$HOSTNAME= with the actual name:
 
+#+begin_src shell
+cat /proc/sys/kernel/hostname
+#+end_src
 
 ** Examples
+After you manually edit the package list(s) you may:
 #+BEGIN_SRC bash
-    # Install missing packages in lists
-    pipac -i packages.txt $HOSTNAME.txt
+  # Install missing packages in default lists
+  pipac -i
 
-    # Install missing packages in default lists
-    pipac -i
+  # Prune packages not in default lists
+  pipac -p
+  yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
 
-    # Prune packages not in lists
-    pipac -p packages.txt $HOSTNAME.txt
-    yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
+  # Install missing packages in lists
+  pipac -i packages.txt $HOSTNAME.txt
 
-    # Combine prune and install
-    pipac -ip packages.txt $HOSTNAME.txt
+  # Prune packages not in lists
+  pipac -p packages.txt $HOSTNAME.txt
+  yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
+
+  # Combine prune and install
+  pipac -ip packages.txt $HOSTNAME.txt
 #+END_SRC
 
 ** Example upgrade script
@@ -69,15 +89,12 @@ I no package lists are specified as arguments =pipac= will use default package l
   pipac -i packages.txt $HOSTNAME.txt
 #+end_src 
 
-** Create a package list for further editing
-#+begin_src bash
-  pacman -Qeq > packages.txt
-#+end_src
-
 * TO-DOs
-- [ ] more examples (use with scripts)
 - [ ] document alternative software
-- [ ] create an AUR package
+- [ ] explain ¿why?
+- [ ] add license
+- [X] more examples (use with scripts)
+- [X] create an AUR package
 - [X] feature: update system while installing
 - [X] feature: read default package lists
 - [X] feature: default behavior when no arguments are passed
