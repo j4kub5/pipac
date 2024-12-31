@@ -90,9 +90,11 @@ After you manually edit the package list(s) you may:
 #+end_src 
 
 * TO-DOs
+- [ ] add license
 - [ ] document alternative software
 - [ ] explain ¿why?
-- [ ] add license
+- [ ] genrerate packages.txt in config directory with -g command
+- [X] make $HOSTNAME.txt in config directory optional
 - [X] more examples (use with scripts)
 - [X] create an AUR package
 - [X] feature: update system while installing
