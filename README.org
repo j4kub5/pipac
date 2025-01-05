@@ -92,7 +92,8 @@ After you manually edit the package list(s) you may:
 * TO-DOs
 - [ ] document alternative software
 - [ ] explain ¿why?
-- [ ] genrerate packages.txt in config directory with -g command
+- [ ] genrerate packages.txt in config directory
+- [X] print out a list of newly installed packages 
 - [X] add license
 - [X] make $HOSTNAME.txt in config directory optional
 - [X] more examples (use with scripts)

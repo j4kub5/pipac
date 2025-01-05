@@ -66,6 +66,12 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        '-n', '--new',
+        action='store_true',
+        help='print installed explicit packages missing from the lists'
+    )
+
+    parser.add_argument(
         'package_lists',
         nargs='*',
         metavar='package_list',
@@ -199,7 +205,7 @@ def main():
     args = parser.parse_args()
 
     # If no action specified, show help and exit
-    if not (args.install or args.prune):
+    if not (args.install or args.prune or args.new):
         parser.print_help()
         sys.exit(0)
 
@@ -216,6 +222,11 @@ def main():
     # Get currently installed packages
     installed_explicit, installed_optional = get_installed_packages(pm)
     bad_install_reason = desired_packages.intersection(installed_optional)
+
+    if args.new:
+        new_packages = installed_explicit - desired_packages
+        print(*new_packages, sep='\n')
+        sys.exit(1)
 
     # Install missing packages
     if args.install:
