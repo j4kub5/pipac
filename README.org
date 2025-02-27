@@ -30,6 +30,7 @@ pipac [COMMAND]... [PACKAGE_LIST]...
 - =-h=, =--help= :: display help message
 - =-i=, =--install= :: install packages from lists that are not currently installed
 - =-p=, =--prune= :: prune packages not in lists (mark as dependencies)
+- =-n=, =--new= :: print installed explicit packages missing from the lists
 
 ** Package Lists
 Package lists are text files; packages are line or space separated. Optional dependencies should be prefixed with =&=. Everything in a line after =#= is a comment (ignored by the program). 
@@ -80,6 +81,9 @@ After you manually edit the package list(s) you may:
 
   # Combine prune and install
   pipac -ip packages.txt $HOSTNAME.txt
+
+  # Add packages you installed manually to a list
+  pipac -n >> ~/.config/pipac/packages.txt
 #+END_SRC
 
 ** Example upgrade script
@@ -90,10 +94,12 @@ After you manually edit the package list(s) you may:
 #+end_src 
 
 * TO-DOs
-- [ ] document alternative software
-- [ ] explain ¿why?
-- [ ] genrerate packages.txt in config directory
-- [X] print out a list of newly installed packages 
+- [ ] feature: flatpaks
+- [ ] documentation: document alternative software
+- [ ] documentation: explain ¿why?
+- [ ] feature: genrerate packages.txt in config directory
+- [ ] feature: diff or dry run
+- [X] feature: print out a list of newly installed packages (not yes added to lists)
 - [X] add license
 - [X] make $HOSTNAME.txt in config directory optional
 - [X] more examples (use with scripts)
