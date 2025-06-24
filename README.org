@@ -56,7 +56,7 @@ If no package lists are specified as arguments =pipac= will use default package 
 - =~/.config/pipac/packages.txt=
 - =~/.config/pipac/$HOSTNAME.txt=
 
-Replace =$HOSTNAME= with the actual name:
+Replace =$HOSTNAME= with the actual name given by:
 
 #+begin_src shell
 cat /proc/sys/kernel/hostname
@@ -94,11 +94,12 @@ After you manually edit the package list(s) you may:
 #+end_src 
 
 * TO-DOs
-- [ ] feature: flatpaks
 - [ ] documentation: document alternative software
 - [ ] documentation: explain ¿why?
+- [ ] feature: config file (e.g. select package manager)
 - [ ] feature: genrerate packages.txt in config directory
 - [ ] feature: diff or dry run
+- [ ] feature: accept =.org= and =.md= as package lists
 - [X] feature: print out a list of newly installed packages (not yes added to lists)
 - [X] add license
 - [X] make $HOSTNAME.txt in config directory optional
