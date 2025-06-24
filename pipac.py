@@ -22,22 +22,27 @@ import subprocess
 import sys
 import os
 import argparse
+import re
 from typing import List, Set, Tuple
 
 def get_default_lists() -> List[str]:
     """Returns a list of strings pointing to default
-    lists in config directory."""
+    lists in config directory for .txt, .org, and .md files."""
 
     config_dir = os.path.expanduser('~/.config/pipac')
-    default_lists = [
-        os.path.join(config_dir, 'packages.txt'),
-        os.path.join(config_dir, f'{os.uname().nodename}.txt')
-    ]
+    os.makedirs(config_dir, exist_ok=True) # Ensure config directory exists
 
-    # Ensure config directory exists
-    os.makedirs(config_dir, exist_ok=True)
+    default_lists = []
+    base_names = ['packages', os.uname().nodename]
+    extensions = ['.txt', '.org', '.md']
 
-    return [path for path in default_lists if os.path.exists(path)]
+    for name in base_names:
+        for ext in extensions:
+            path = os.path.join(config_dir, f'{name}{ext}')
+            if os.path.exists(path):
+                default_lists.append(path)
+
+    return default_lists
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -128,7 +133,7 @@ def parse_package_lists(filenames: List[str]) -> Tuple[Set[str], Set[str]]:
             with open(filename, 'r') as f:
                 for line in f:
                     # Remove comments and strip whitespace
-                    line = line.split('#')[0].strip()
+                    line = re.split(r'[#*;]', line)[0].strip()
                     if not line:
                         continue
 

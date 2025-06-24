@@ -33,7 +33,7 @@ pipac [COMMAND]... [PACKAGE_LIST]...
 - =-n=, =--new= :: print installed explicit packages missing from the lists
 
 ** Package Lists
-Package lists are text files; packages are line or space separated. Optional dependencies should be prefixed with =&=. Everything in a line after =#= is a comment (ignored by the program). 
+Package lists are text files; packages are line or space separated. Optional dependencies should be prefixed with =&=. Everything in a line after =#=, =*=, =;= is a comment (ignored by the program).
 
 Example package list:
 #+BEGIN_SRC
@@ -99,7 +99,7 @@ After you manually edit the package list(s) you may:
 - [ ] feature: config file (e.g. select package manager)
 - [ ] feature: genrerate packages.txt in config directory
 - [ ] feature: diff or dry run
-- [ ] feature: accept =.org= and =.md= as package lists
+- [X] feature: accept =.org= and =.md= as package lists
 - [X] feature: print out a list of newly installed packages (not yes added to lists)
 - [X] add license
 - [X] make $HOSTNAME.txt in config directory optional
