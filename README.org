@@ -1,12 +1,24 @@
 #+TITLE: pipac - Prune and Install PACkages
 
 * About
-=pipac= (Prune and Install PACkages) is a Python tool that helps maintain a clean system (Arch Linux or similar) by ensuring that explicitly installed packages match user-provided package lists (declarative package management).
+=pipac= (Prune and Install PACkages) is a very simple Python tool that helps maintain a clean system (Arch Linux or similar) by ensuring that explicitly installed packages match user-provided package lists (declarative package management).
 
 ** Features
 - maintains system packages based on package lists
 - supports multiple package managers (yay, paru, pacman)
 - handles optional dependencies
+- accepts =.txt=, =.md= and =.org= as list formats
+
+* Why was =pipac= created?
+The goal was to create a simple tool that does one thing well: make sure that installed packages in a system are those and only those on user’s specified lists. I tried using alternative software (see below) but found them too complex (but still great and an inspiration to create =pipac=).
+
+=pipac= is written in python because of it’s widespread use (https://pkgstats.archlinux.de/packages/python). I was considering bash but it surpasses python popularity only by 0.2%.
+
+** Alternatives
+- metapac: https://github.com/ripytide/metapac
+- aconfmgr: https://github.com/CyberShadow/aconfmgr
+- declaro: https://github.com/mantinhas/declaro
+- pacdef: https://github.com/steven-omaha/pacdef
 
 * Installation
 ** Manual
@@ -113,9 +125,10 @@ After you manually edit the package list(s) you may:
 #+end_src 
 
 * TO-DOs
-- [ ] documentation: document alternative software
-- [ ] documentation: explain ¿why?
-- [ ] feature: config file (e.g. select package manager)
+- [ ] feature: configuration file (select package manager, select custom lists, use default lists y/n)
+- [ ] feature: run yay -Yc (or equivalent) after pruning
+- [X] documentation: explain ¿why?
+- [X] documentation: document alternative software
 - [X] feature: ask for confirmation before =-D= operations
 - [X] feature: accept =.org= and =.md= as package lists
 - [X] feature: print out a list of newly installed packages (not yes added to lists)
