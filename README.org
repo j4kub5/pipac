@@ -35,7 +35,8 @@ pipac [COMMAND]... [PACKAGE_LIST]...
 ** Package Lists
 Package lists are text files; packages are line or space separated. Optional dependencies should be prefixed with =&=. Everything in a line after =#=, =*=, =;= is a comment (ignored by the program).
 
-Example package list:
+*** Example package lists
+**** txt
 #+BEGIN_SRC
 package1
 package2 # comment
@@ -45,6 +46,24 @@ package2 # comment
 package3 package4
 package5 &optional_dependency_for_package5
 #+END_SRC
+
+**** md
+#+begin_src markdown
+# base
+linux
+
+# network
+iwd
+#+end_src
+
+**** org-mode
+#+begin_src org
+,* base
+linux
+
+,* network
+iwd
+#+end_src
 
 *** Create a package list
 #+begin_src bash
