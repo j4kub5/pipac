@@ -116,8 +116,7 @@ After you manually edit the package list(s) you may:
 - [ ] documentation: document alternative software
 - [ ] documentation: explain ¿why?
 - [ ] feature: config file (e.g. select package manager)
-- [ ] feature: genrerate packages.txt in config directory
-- [ ] feature: diff or dry run
+- [X] feature: ask for confirmation before =-D= operations
 - [X] feature: accept =.org= and =.md= as package lists
 - [X] feature: print out a list of newly installed packages (not yes added to lists)
 - [X] add license

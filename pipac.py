@@ -172,18 +172,29 @@ def install_packages(pm: str, packages: Set[str],
         print(f"Error installing packages: {e}", file=sys.stderr)
         sys.exit(1)
 
+def confirm_operation(cmd: list, packages: Set[str], operation: str) -> bool:
+    """Ask for operation confirmation."""
+    print(f"About to execute: {' '.join(cmd)}")
+    confirm = input("Proceed? (y/N): ").strip().lower()
+    return confirm in ['y', 'yes']
+
 
 def mark_as_deps(pm: str, packages: Set[str]) -> None:
     """Mark packages as dependencies."""
     if not packages:
         return
 
-    cmd = pm.split()  # Split 'sudo pacman' into ['sudo', 'pacman']
+    cmd = pm.split()
     cmd.extend(['-D', '--asdeps'])
     cmd.extend(packages)
 
+    if not confirm_operation(cmd, packages, "dependencies"):
+        print("Operation cancelled.")
+        return
+
     try:
         subprocess.run(cmd, check=True)
+        print("Packages successfully marked as dependencies. Remove orphans manually.")
     except subprocess.CalledProcessError as e:
         print(f"Error marking packages as dependencies: {e}", file=sys.stderr)
         sys.exit(1)
@@ -194,15 +205,21 @@ def mark_as_explicit(pm: str, packages: Set[str]) -> None:
     if not packages:
         return
 
-    cmd = pm.split()  # Split 'sudo pacman' into ['sudo', 'pacman']
+    cmd = pm.split()
     cmd.extend(['-D', '--asexplicit'])
     cmd.extend(packages)
 
+    if not confirm_operation(cmd, packages, "explicit"):
+        print("Operation cancelled.")
+        return
+
     try:
         subprocess.run(cmd, check=True)
+        print("Packages successfully marked as explicit.")
     except subprocess.CalledProcessError as e:
-        print(f"Error marking packages as dependencies: {e}", file=sys.stderr)
+        print(f"Error marking packages as explicit: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 def main():
     # Parse command line arguments
@@ -255,11 +272,15 @@ def main():
 
     # Prune packages not in lists
     if args.prune:
+        if bad_install_reason:
+            print(f"Fixing install reason to explicit: \
+            {', '.join(sorted(bad_install_reason))}")
+            mark_as_explicit(pm, bad_install_reason)
+
         to_prune = installed_explicit - desired_packages
         if to_prune:
             print(f"Marking as dependencies: {', '.join(sorted(to_prune))}")
             mark_as_deps(pm, to_prune)
-            print("You may now remove orphans manually.")
 
 if __name__ == '__main__':
     main()
