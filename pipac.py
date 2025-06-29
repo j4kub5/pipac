@@ -26,11 +26,17 @@ import re
 import configparser
 from typing import List, Set, Tuple
 
+
+def get_config_dir() -> str:
+    """Get config directory."""
+    xdg_config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+    return os.path.join(xdg_config_home, 'pipac')
+
+
 def load_config() -> configparser.ConfigParser:
     """Load config file."""
-
     config = configparser.ConfigParser()
-    config_file = os.path.expanduser('~/.config/pipac/pipac.ini')
+    config_file = os.path.join(get_config_dir(), 'pipac.ini')
     if os.path.exists(config_file):
         config.read(config_file)
     return config
@@ -38,15 +44,12 @@ def load_config() -> configparser.ConfigParser:
 
 def get_default_lists(config: configparser.ConfigParser = None) -> List[str]:
     """Returns a list of strings pointing to package lists."""
-
     default_lists = []
 
-    use_defaults = True
     use_defaults = config.getboolean('default', 'use_default_lists', fallback=True) if config else True
 
-
     if use_defaults:
-        config_dir = os.path.expanduser('~/.config/pipac')
+        config_dir = get_config_dir()
         os.makedirs(config_dir, exist_ok=True)
         base_names = ['packages', os.uname().nodename]
         extensions = ['.txt', '.org', '.md']
@@ -66,8 +69,7 @@ def get_default_lists(config: configparser.ConfigParser = None) -> List[str]:
     return default_lists
 
 
-
-def create_parser() -> argparse.ArgumentParser:
+def create_parser(config: configparser.ConfigParser) -> argparse.ArgumentParser:
     """Create and return the argument parser with documentation.
 
     This function sets up the command-line interface for managing
@@ -75,8 +77,6 @@ def create_parser() -> argparse.ArgumentParser:
     that are not currently installed or prune packages that are not in
     the list, and specify one or more package list files as arguments.
     """
-
-    config = load_config()
 
     parser = argparse.ArgumentParser(
         description='Maintain system with package lists.',
@@ -125,12 +125,11 @@ def get_package_manager(config: configparser.ConfigParser = None) -> str:
     # Check config first
     if config and config.has_option('default', 'package_manager'):
         pm = config.get('default', 'package_manager').strip()
-        if pm:  # Check if not empty
+        if pm:
             result = subprocess.run(['which', pm], capture_output=True)
             if result.returncode == 0:
                 return 'sudo pacman' if pm == 'pacman' else pm
-            print(f"Warning: Configured package manager '{pm}' \
-            not found, falling back to auto-detection", file=sys.stderr)
+            print(f"Warning: Configured package manager '{pm}' not found, falling back to auto-detection", file=sys.stderr)
 
     # Auto-detection
     for pm in ['yay', 'paru', 'pacman']:
@@ -278,7 +277,7 @@ def mark_as_explicit(pm: str, packages: Set[str]) -> None:
 def main():
     # Parse command line arguments
     config = load_config()
-    parser = create_parser()
+    parser = create_parser(config)
     args = parser.parse_args()
 
     # If no action specified, show help and exit

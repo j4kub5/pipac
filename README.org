@@ -126,7 +126,8 @@ After you manually edit the package list(s) you may:
 
 * TO-DOs
 - [ ] feature: when no lists are present and =-n= should ask to create =.config/pipac/packages.txt=
-- [ ] feature: configuration file (select package manager, select custom lists, use default lists y/n)
+- [X] fix: respect XDG_CONFIG_HOME
+- [X] feature: configuration file (select package manager, select custom lists, use default lists y/n)
 - [X] feature: run yay -Yc (or equivalent) after pruning (=-o= flag)
 - [X] documentation: explain ¿why?
 - [X] documentation: document alternative software
