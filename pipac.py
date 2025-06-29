@@ -71,6 +71,11 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        '-o', '--orphans',
+        action='store_true',
+        help='remove orphans')
+
+    parser.add_argument(
         '-n', '--new',
         action='store_true',
         help='print installed explicit packages missing from the lists'
@@ -172,11 +177,24 @@ def install_packages(pm: str, packages: Set[str],
         print(f"Error installing packages: {e}", file=sys.stderr)
         sys.exit(1)
 
+
 def confirm_operation(cmd: list, packages: Set[str], operation: str) -> bool:
     """Ask for operation confirmation."""
     print(f"About to execute: {' '.join(cmd)}")
     confirm = input("Proceed? (y/N): ").strip().lower()
     return confirm in ['y', 'yes']
+
+
+def remove_orphans(pm: str) -> None:
+    """Remove orphaned packages."""
+
+    if "yay" in pm:
+        subprocess.run(["yay", "-Yc"], check=False)
+    elif "paru" in pm:
+        subprocess.run(["paru", "-c"], check=False)
+    else:
+        while subprocess.run("pacman -Qdtq", shell=True, stdout=subprocess.PIPE).stdout:
+            subprocess.run(f"{pm} -Rns $(pacman -Qdtq)", shell=True)
 
 
 def mark_as_deps(pm: str, packages: Set[str]) -> None:
@@ -227,7 +245,7 @@ def main():
     args = parser.parse_args()
 
     # If no action specified, show help and exit
-    if not (args.install or args.prune or args.new):
+    if not (args.install or args.prune or args.new or args.orphans):
         parser.print_help()
         sys.exit(0)
 
@@ -250,6 +268,21 @@ def main():
         print(*new_packages, sep='\n')
         sys.exit(1)
 
+    # Prune packages not in lists
+    if args.prune:
+        if bad_install_reason:
+            print(f"Fixing install reason to explicit: \
+            {', '.join(sorted(bad_install_reason))}")
+            mark_as_explicit(pm, bad_install_reason)
+
+        to_prune = installed_explicit - desired_packages
+        if to_prune:
+            print(f"Marking as dependencies: {', '.join(sorted(to_prune))}")
+            mark_as_deps(pm, to_prune)
+
+    if args.orphans:
+        remove_orphans(pm)
+
     # Install missing packages
     if args.install:
         missing_regular = desired_packages - installed_explicit
@@ -269,18 +302,6 @@ def main():
             print(f"Installing optional dependencies: \
             {', '.join(sorted(missing_optional))}")
             install_packages(pm, missing_optional, as_deps=True)
-
-    # Prune packages not in lists
-    if args.prune:
-        if bad_install_reason:
-            print(f"Fixing install reason to explicit: \
-            {', '.join(sorted(bad_install_reason))}")
-            mark_as_explicit(pm, bad_install_reason)
-
-        to_prune = installed_explicit - desired_packages
-        if to_prune:
-            print(f"Marking as dependencies: {', '.join(sorted(to_prune))}")
-            mark_as_deps(pm, to_prune)
 
 if __name__ == '__main__':
     main()
