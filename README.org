@@ -40,9 +40,12 @@ pipac [COMMAND]... [PACKAGE_LIST]...
 
 ** Commands
 - =-h=, =--help= :: display help message
+- =-p=, =--prune= :: prune packages not in lists (mark them as dependencies)
+- =-o=, =--orphans= :: remove orphans
 - =-i=, =--install= :: install packages from lists that are not currently installed
-- =-p=, =--prune= :: prune packages not in lists (mark as dependencies)
 - =-n=, =--new= :: print installed explicit packages missing from the lists
+
+=-p=, =-o= and =-i= can be used together. The order of operations is always: prune, orphans, install.
 
 ** Package Lists
 Package lists are text files; packages are line or space separated. Optional dependencies should be prefixed with =&=. Everything in a line after =#=, =*=, =;= is a comment (ignored by the program).
@@ -84,13 +87,36 @@ iwd
 
 *** Default package lists
 If no package lists are specified as arguments =pipac= will use default package lists:
-- =~/.config/pipac/packages.txt=
-- =~/.config/pipac/$HOSTNAME.txt=
+- =packages[.txt,.md,.org]=
+- =$HOSTNAME[.txt,.md,.org]=
+located in  in =$XDG_CONFIG_HOME/pipac/= or =~/.config/pipac/=.
 
 Replace =$HOSTNAME= with the actual name given by:
 
 #+begin_src shell
 cat /proc/sys/kernel/hostname
+#+end_src
+
+* Configuration
+Configuration is done with a config file. Configuration is optional.
+
+=pipac= searches for a config file in =$XDG_CONFIG_HOME/pipac/pipac.ini= and falls back to =~/.config/pipac/pipac.ini=.
+
+Example config file:
+#+begin_src
+[default]
+# Preffered package manager (yay, paru, pacman). Defaults to yay
+package_manager = yay
+
+# Use defaults lists (see [Default pagkage lists] section)
+use_default_lists = true
+
+[lists]
+# Additional package lists
+temporary_packages = ~/.config/pipac/temp.txt
+work_packages = /home/user/work-packages.md
+gaming_packages = ~/.config/pipac/games.org
+
 #+end_src
 
 ** Examples
@@ -99,16 +125,15 @@ After you manually edit the package list(s) you may:
   # Install missing packages in default lists
   pipac -i
 
-  # Prune packages not in default lists
-  pipac -p
-  yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
+  # Prune packages not in default lists (mark them as dependencies)
+  # and then remove orphans
+  pipac -po
 
   # Install missing packages in lists
   pipac -i packages.txt $HOSTNAME.txt
 
   # Prune packages not in lists
   pipac -p packages.txt $HOSTNAME.txt
-  yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
 
   # Combine prune and install
   pipac -ip packages.txt $HOSTNAME.txt
@@ -116,13 +141,6 @@ After you manually edit the package list(s) you may:
   # Add packages you installed manually to a list
   pipac -n >> ~/.config/pipac/packages.txt
 #+END_SRC
-
-** Example upgrade script
-#+begin_src bash
-  pipac -p packages.txt $HOSTNAME.txt
-  yay -Yc # or paru -c or sudo pacman -Rns $(pacman -Qtdq)
-  pipac -i packages.txt $HOSTNAME.txt
-#+end_src 
 
 * TO-DOs
 - [ ] feature: when no lists are present and =-n= should ask to create =.config/pipac/packages.txt=

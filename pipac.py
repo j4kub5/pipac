@@ -29,8 +29,8 @@ from typing import List, Set, Tuple
 
 def get_config_dir() -> str:
     """Get config directory."""
-    xdg_config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-    return os.path.join(xdg_config_home, "pipac")
+    config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    return os.path.join(config_home, "pipac")
 
 
 def load_config() -> configparser.ConfigParser:
@@ -42,7 +42,7 @@ def load_config() -> configparser.ConfigParser:
     return config
 
 
-def get_default_lists(config: configparser.ConfigParser = None) -> List[str]:
+def get_lists(config: configparser.ConfigParser = None) -> List[str]:
     """Returns a list of strings pointing to package lists."""
     default_lists = []
 
@@ -89,20 +89,20 @@ def create_parser(config: configparser.ConfigParser) -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "-p",
+        "--prune",
+        action="store_true",
+        help="prune packages not in lists (mark them as dependencies)",
+    )
+
+    parser.add_argument("-o", "--orphans", action="store_true", help="remove orphans")
+
+    parser.add_argument(
         "-i",
         "--install",
         action="store_true",
         help="install packages from lists that are not currently installed",
     )
-
-    parser.add_argument(
-        "-p",
-        "--prune",
-        action="store_true",
-        help="prune packages not in lists (mark as dependencies)",
-    )
-
-    parser.add_argument("-o", "--orphans", action="store_true", help="remove orphans")
 
     parser.add_argument(
         "-n",
@@ -115,7 +115,7 @@ def create_parser(config: configparser.ConfigParser) -> argparse.ArgumentParser:
         "package_lists",
         nargs="*",
         metavar="package_list",
-        default=get_default_lists(config),
+        default=get_lists(config),
         help="one or more package list files",
     )
 
@@ -242,8 +242,27 @@ def remove_orphans(pm: str) -> None:
     elif "paru" in pm:
         subprocess.run(["paru", "-c"], check=False)
     else:
-        while subprocess.run("pacman -Qdtq", shell=True, stdout=subprocess.PIPE).stdout:
-            subprocess.run(f"{pm} -Rns $(pacman -Qdtq)", shell=True)
+        while True:
+            orphans_result = subprocess.run(
+                ["pacman", "-Qdtq"], capture_output=True, text=True
+            )
+            if not orphans_result.stdout.strip():
+                print("No orphans found.")
+                break
+
+            orphans = orphans_result.stdout.strip().split("\n")
+            print(f"Found {len(orphans)} orphaned packages: {', '.join(orphans)}")
+
+            if input("Remove? (y/N): ").lower() != "y":
+                break
+
+            try:
+                cmd = pm.split() + ["-Rns"] + orphans
+                subprocess.run(cmd, check=True)
+                print(f"Removed {len(orphans)} packages.")
+            except subprocess.CalledProcessError:
+                print("Error removing packages.")
+                break
 
 
 def mark_as_deps(pm: str, packages: Set[str]) -> None:
@@ -261,7 +280,7 @@ def mark_as_deps(pm: str, packages: Set[str]) -> None:
 
     try:
         subprocess.run(cmd, check=True)
-        print("Packages successfully marked as dependencies. Remove orphans manually.")
+        print("Packages successfully marked as dependencies.")
     except subprocess.CalledProcessError as e:
         print(f"Error marking packages as dependencies: {e}", file=sys.stderr)
         sys.exit(1)
