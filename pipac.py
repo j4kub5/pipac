@@ -23,26 +23,48 @@ import sys
 import os
 import argparse
 import re
+import configparser
 from typing import List, Set, Tuple
 
-def get_default_lists() -> List[str]:
-    """Returns a list of strings pointing to default
-    lists in config directory for .txt, .org, and .md files."""
+def load_config() -> configparser.ConfigParser:
+    """Load config file."""
 
-    config_dir = os.path.expanduser('~/.config/pipac')
-    os.makedirs(config_dir, exist_ok=True) # Ensure config directory exists
+    config = configparser.ConfigParser()
+    config_file = os.path.expanduser('~/.config/pipac/pipac.ini')
+    if os.path.exists(config_file):
+        config.read(config_file)
+    return config
+
+
+def get_default_lists(config: configparser.ConfigParser = None) -> List[str]:
+    """Returns a list of strings pointing to package lists."""
 
     default_lists = []
-    base_names = ['packages', os.uname().nodename]
-    extensions = ['.txt', '.org', '.md']
 
-    for name in base_names:
-        for ext in extensions:
-            path = os.path.join(config_dir, f'{name}{ext}')
-            if os.path.exists(path):
-                default_lists.append(path)
+    use_defaults = True
+    use_defaults = config.getboolean('default', 'use_default_lists', fallback=True) if config else True
+
+
+    if use_defaults:
+        config_dir = os.path.expanduser('~/.config/pipac')
+        os.makedirs(config_dir, exist_ok=True)
+        base_names = ['packages', os.uname().nodename]
+        extensions = ['.txt', '.org', '.md']
+        for name in base_names:
+            for ext in extensions:
+                path = os.path.join(config_dir, f'{name}{ext}')
+                if os.path.exists(path):
+                    default_lists.append(path)
+
+    if config and config.has_section('lists'):
+        default_lists.extend(
+            os.path.expanduser(config.get('lists', option).strip())
+            for option in config.options('lists')
+            if config.get('lists', option).strip()
+        )
 
     return default_lists
+
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -53,6 +75,9 @@ def create_parser() -> argparse.ArgumentParser:
     that are not currently installed or prune packages that are not in
     the list, and specify one or more package list files as arguments.
     """
+
+    config = load_config()
+
     parser = argparse.ArgumentParser(
         description='Maintain system with package lists.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -85,25 +110,36 @@ def create_parser() -> argparse.ArgumentParser:
         'package_lists',
         nargs='*',
         metavar='package_list',
-        default=get_default_lists(),
+        default=get_default_lists(config),
         help='one or more package list files'
     )
 
     return parser
 
-def get_package_manager() -> str:
-    """Return the available package manager.
-    The order of preference is: yay > paru > pacman.
+
+def get_package_manager(config: configparser.ConfigParser = None) -> str:
+    """Return the preferred package manager if available,
+    otherwise, the order of preference is: yay > paru > pacman.
     If no supported package manager is found, raise a SystemError."""
+
+    # Check config first
+    if config and config.has_option('default', 'package_manager'):
+        pm = config.get('default', 'package_manager').strip()
+        if pm:  # Check if not empty
+            result = subprocess.run(['which', pm], capture_output=True)
+            if result.returncode == 0:
+                return 'sudo pacman' if pm == 'pacman' else pm
+            print(f"Warning: Configured package manager '{pm}' \
+            not found, falling back to auto-detection", file=sys.stderr)
+
+    # Auto-detection
     for pm in ['yay', 'paru', 'pacman']:
-        try:
-            subprocess.run(['which', pm], capture_output=True, check=True)
-            if pm == 'pacman':
-                return 'sudo pacman'
-            return pm
-        except subprocess.CalledProcessError:
-            continue
-    raise SystemError("No supported package manager found")
+        result = subprocess.run(['which', pm], capture_output=True)
+        if result.returncode == 0:
+            return 'sudo pacman' if pm == 'pacman' else pm
+
+    raise SystemError("No supported package manager found.")
+
 
 def get_installed_packages(pm: str) -> Tuple[Set[str], Set[str]]:
     """Return sets of explicitly installed packages and optional dependencies."""
@@ -241,6 +277,7 @@ def mark_as_explicit(pm: str, packages: Set[str]) -> None:
 
 def main():
     # Parse command line arguments
+    config = load_config()
     parser = create_parser()
     args = parser.parse_args()
 
@@ -251,7 +288,7 @@ def main():
 
     # Get package manager
     try:
-        pm = get_package_manager()
+        pm = get_package_manager(config)
     except SystemError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
