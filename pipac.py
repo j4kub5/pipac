@@ -29,14 +29,14 @@ from typing import List, Set, Tuple
 
 def get_config_dir() -> str:
     """Get config directory."""
-    xdg_config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
-    return os.path.join(xdg_config_home, 'pipac')
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+    return os.path.join(xdg_config_home, "pipac")
 
 
 def load_config() -> configparser.ConfigParser:
     """Load config file."""
     config = configparser.ConfigParser()
-    config_file = os.path.join(get_config_dir(), 'pipac.ini')
+    config_file = os.path.join(get_config_dir(), "pipac.ini")
     if os.path.exists(config_file):
         config.read(config_file)
     return config
@@ -46,24 +46,28 @@ def get_default_lists(config: configparser.ConfigParser = None) -> List[str]:
     """Returns a list of strings pointing to package lists."""
     default_lists = []
 
-    use_defaults = config.getboolean('default', 'use_default_lists', fallback=True) if config else True
+    use_defaults = (
+        config.getboolean("default", "use_default_lists", fallback=True)
+        if config
+        else True
+    )
 
     if use_defaults:
         config_dir = get_config_dir()
         os.makedirs(config_dir, exist_ok=True)
-        base_names = ['packages', os.uname().nodename]
-        extensions = ['.txt', '.org', '.md']
+        base_names = ["packages", os.uname().nodename]
+        extensions = [".txt", ".org", ".md"]
         for name in base_names:
             for ext in extensions:
-                path = os.path.join(config_dir, f'{name}{ext}')
+                path = os.path.join(config_dir, f"{name}{ext}")
                 if os.path.exists(path):
                     default_lists.append(path)
 
-    if config and config.has_section('lists'):
+    if config and config.has_section("lists"):
         default_lists.extend(
-            os.path.expanduser(config.get('lists', option).strip())
-            for option in config.options('lists')
-            if config.get('lists', option).strip()
+            os.path.expanduser(config.get("lists", option).strip())
+            for option in config.options("lists")
+            if config.get("lists", option).strip()
         )
 
     return default_lists
@@ -79,39 +83,40 @@ def create_parser(config: configparser.ConfigParser) -> argparse.ArgumentParser:
     """
 
     parser = argparse.ArgumentParser(
-        description='Maintain system with package lists.',
+        description="Maintain system with package lists.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="More usage info: https://github.com/j4kub5/pipac")
-
-    parser.add_argument(
-        '-i', '--install',
-        action='store_true',
-        help='install packages from lists that are not currently installed'
+        epilog="More usage info: https://github.com/j4kub5/pipac",
     )
 
     parser.add_argument(
-        '-p', '--prune',
-        action='store_true',
-        help='prune packages not in lists (mark as dependencies)'
+        "-i",
+        "--install",
+        action="store_true",
+        help="install packages from lists that are not currently installed",
     )
 
     parser.add_argument(
-        '-o', '--orphans',
-        action='store_true',
-        help='remove orphans')
+        "-p",
+        "--prune",
+        action="store_true",
+        help="prune packages not in lists (mark as dependencies)",
+    )
+
+    parser.add_argument("-o", "--orphans", action="store_true", help="remove orphans")
 
     parser.add_argument(
-        '-n', '--new',
-        action='store_true',
-        help='print installed explicit packages missing from the lists'
+        "-n",
+        "--new",
+        action="store_true",
+        help="print installed explicit packages missing from the lists",
     )
 
     parser.add_argument(
-        'package_lists',
-        nargs='*',
-        metavar='package_list',
+        "package_lists",
+        nargs="*",
+        metavar="package_list",
         default=get_default_lists(config),
-        help='one or more package list files'
+        help="one or more package list files",
     )
 
     return parser
@@ -123,19 +128,22 @@ def get_package_manager(config: configparser.ConfigParser = None) -> str:
     If no supported package manager is found, raise a SystemError."""
 
     # Check config first
-    if config and config.has_option('default', 'package_manager'):
-        pm = config.get('default', 'package_manager').strip()
+    if config and config.has_option("default", "package_manager"):
+        pm = config.get("default", "package_manager").strip()
         if pm:
-            result = subprocess.run(['which', pm], capture_output=True)
+            result = subprocess.run(["which", pm], capture_output=True)
             if result.returncode == 0:
-                return 'sudo pacman' if pm == 'pacman' else pm
-            print(f"Warning: Configured package manager '{pm}' not found, falling back to auto-detection", file=sys.stderr)
+                return "sudo pacman" if pm == "pacman" else pm
+            print(
+                f"Warning: Configured package manager '{pm}' not found, falling back to auto-detection",
+                file=sys.stderr,
+            )
 
     # Auto-detection
-    for pm in ['yay', 'paru', 'pacman']:
-        result = subprocess.run(['which', pm], capture_output=True)
+    for pm in ["yay", "paru", "pacman"]:
+        result = subprocess.run(["which", pm], capture_output=True)
         if result.returncode == 0:
-            return 'sudo pacman' if pm == 'pacman' else pm
+            return "sudo pacman" if pm == "pacman" else pm
 
     raise SystemError("No supported package manager found.")
 
@@ -147,8 +155,10 @@ def get_installed_packages(pm: str) -> Tuple[Set[str], Set[str]]:
     result = subprocess.run(cmd.split(), capture_output=True, text=True)
 
     if result.returncode != 0:
-        raise RuntimeError(f"Failed to get explicitly installed \
-        packages: {result.stderr}")
+        raise RuntimeError(
+            f"Failed to get explicitly installed \
+        packages: {result.stderr}"
+        )
 
     explicit = {line.split()[0] for line in result.stdout.splitlines()}
 
@@ -163,6 +173,7 @@ def get_installed_packages(pm: str) -> Tuple[Set[str], Set[str]]:
 
     return explicit, optional
 
+
 def parse_package_lists(filenames: List[str]) -> Tuple[Set[str], Set[str]]:
     """Parse package lists and return sets of regular and optional packages."""
     regular_packages = set()
@@ -170,39 +181,42 @@ def parse_package_lists(filenames: List[str]) -> Tuple[Set[str], Set[str]]:
 
     for filename in filenames:
         try:
-            with open(filename, 'r') as f:
+            with open(filename, "r") as f:
                 for line in f:
                     # Remove comments and strip whitespace
-                    line = re.split(r'[#*;]', line)[0].strip()
+                    line = re.split(r"[#*;]", line)[0].strip()
                     if not line:
                         continue
 
                     # Split line into packages
                     packages = line.split()
                     for pkg in packages:
-                        if pkg.startswith('&'):
+                        if pkg.startswith("&"):
                             optional_packages.add(pkg[1:])  # Remove & prefix
                         else:
                             regular_packages.add(pkg)
 
         except FileNotFoundError:
-            print(f"Error: Package list '{filename}' \
-            not found", file=sys.stderr)
+            print(
+                f"Error: Package list '{filename}' \
+            not found",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     return regular_packages, optional_packages
 
-def install_packages(pm: str, packages: Set[str],
-                     as_deps: bool = False) -> None:
+
+def install_packages(pm: str, packages: Set[str], as_deps: bool = False) -> None:
     """Install packages using the specified package manager."""
     if not packages:
         return
 
     cmd = pm.split()
-    cmd.extend(['-S', '--needed', '--sysupgrade', '--refresh'])
+    cmd.extend(["-S", "--needed", "--sysupgrade", "--refresh"])
 
     if as_deps:
-        cmd.extend(['--asdeps'])
+        cmd.extend(["--asdeps"])
 
     cmd.extend(packages)
 
@@ -217,7 +231,7 @@ def confirm_operation(cmd: list, packages: Set[str], operation: str) -> bool:
     """Ask for operation confirmation."""
     print(f"About to execute: {' '.join(cmd)}")
     confirm = input("Proceed? (y/N): ").strip().lower()
-    return confirm in ['y', 'yes']
+    return confirm in ["y", "yes"]
 
 
 def remove_orphans(pm: str) -> None:
@@ -238,7 +252,7 @@ def mark_as_deps(pm: str, packages: Set[str]) -> None:
         return
 
     cmd = pm.split()
-    cmd.extend(['-D', '--asdeps'])
+    cmd.extend(["-D", "--asdeps"])
     cmd.extend(packages)
 
     if not confirm_operation(cmd, packages, "dependencies"):
@@ -259,7 +273,7 @@ def mark_as_explicit(pm: str, packages: Set[str]) -> None:
         return
 
     cmd = pm.split()
-    cmd.extend(['-D', '--asexplicit'])
+    cmd.extend(["-D", "--asexplicit"])
     cmd.extend(packages)
 
     if not confirm_operation(cmd, packages, "explicit"):
@@ -301,14 +315,16 @@ def main():
 
     if args.new:
         new_packages = installed_explicit - desired_packages
-        print(*new_packages, sep='\n')
+        print(*new_packages, sep="\n")
         sys.exit(1)
 
     # Prune packages not in lists
     if args.prune:
         if bad_install_reason:
-            print(f"Fixing install reason to explicit: \
-            {', '.join(sorted(bad_install_reason))}")
+            print(
+                f"Fixing install reason to explicit: \
+            {', '.join(sorted(bad_install_reason))}"
+            )
             mark_as_explicit(pm, bad_install_reason)
 
         to_prune = installed_explicit - desired_packages
@@ -325,8 +341,10 @@ def main():
         missing_optional = desired_optional - installed_optional
 
         if bad_install_reason:
-            print(f"Fixing install reason to explicit: \
-            {', '.join(sorted(bad_install_reason))}")
+            print(
+                f"Fixing install reason to explicit: \
+            {', '.join(sorted(bad_install_reason))}"
+            )
             mark_as_explicit(pm, bad_install_reason)
             missing_regular = missing_regular - bad_install_reason
 
@@ -335,9 +353,12 @@ def main():
             install_packages(pm, missing_regular)
 
         if missing_optional:
-            print(f"Installing optional dependencies: \
-            {', '.join(sorted(missing_optional))}")
+            print(
+                f"Installing optional dependencies: \
+            {', '.join(sorted(missing_optional))}"
+            )
             install_packages(pm, missing_optional, as_deps=True)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
